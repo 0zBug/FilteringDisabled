@@ -4,12 +4,29 @@ local Edit = ReplicatedStorage.Edit
 local InstanceEvent = ReplicatedStorage.Instance
 
 local Ready
+local History = {}
 
 local Types = {
-	["__newindex"] = function(Part, Index, Value)
-		Part[Index] = Value
+	["__newindex"] = function(Time, Part, Index, Value)
+		if Part then
+			if not History[Part] then
+				History[Part] = {}
+			end
+
+			if not History[Part][Index] then
+				History[Part][Index] = Time
+			else
+				if History[Part][Index] > Time or (os.clock() - History[Part][Index]) < 0.01 then
+					return
+				else
+					History[Part][Index] = Time
+				end
+			end
+			
+			Part[Index] = Value
+		end
 	end,
-	["Destroy"] = function(Part)
+	["Destroy"] = function(Time, Part)
 		Part:Destroy()
 	end,
 	["Ready"] = function()
@@ -17,10 +34,8 @@ local Types = {
 	end
 }
 
-Edit.OnServerEvent:Connect(function(Player, Type, Part, ...)
-	print(Player, Type, Part, ...)
-	
-	Types[Type](Part, ...)
+Edit.OnServerEvent:Connect(function(Player, Type, Time, Part, Index, Value)
+	Types[Type](Time, Part, Index, Value)
 end)
 
 InstanceEvent.OnServerInvoke = function(Player, Mode, Type, Parent)
@@ -30,7 +45,7 @@ InstanceEvent.OnServerInvoke = function(Player, Mode, Type, Parent)
 	local Part = Instance.new(Type, Parent)
 
 	Ready = false
-	repeat wait() Edit:FireClient(Player, Part) until Ready == true 
+	repeat wait() Edit:FireClient(Player, Part) until Ready == true
 
 	return Part
 end
