@@ -1,5 +1,4 @@
 
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Modules = ReplicatedStorage.Modules
 
@@ -59,8 +58,19 @@ local function Create(Instance)
 	local Properties = GetProperties(Instance)
 
     return setmetatable({}, {
-        __index = function(self, Key)
-        	local Item = Properties[Key] or Children[Key]
+        __index = function(self, Key, ...)
+        	local Item = pcall(function() _ = Instance[Key] end) and typeof(Instance[Key]) ~= "Instance" and Instance[Key]
+        	
+        	if Item then
+        		return function(...)
+        			local args = {...}
+        			table.remove(args, 1)
+        			
+        			return Instance[Key](Instance, table.unpack(args))
+        		end
+        	end
+        	
+        	Item = Item and Item or Properties[Key] or Children[Key]
         	
         	if typeof(Item) == "Instance" then
         		return Create(Item)
