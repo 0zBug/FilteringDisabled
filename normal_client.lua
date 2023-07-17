@@ -1,4 +1,5 @@
 
+
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Modules = ReplicatedStorage.Modules
 
@@ -27,8 +28,8 @@ local function GetProperties(Instance)
     end
     
     return setmetatable(Table, {
-        __index = function(self, Key, Value)
-            return rawget(self, Key) or pcall(function() local _ = Instance[Key] end) and Instance[Key]
+        __index = function(self, Key)
+            return Instance[Key]
         end
     })
 end
@@ -56,11 +57,10 @@ end
 local function Create(Instance)
 	local Children = FormatChildren(Instance:GetChildren())
 	local Properties = GetProperties(Instance)
-    local Table = Combine(Children, Properties)
-    
+
     return setmetatable({}, {
         __index = function(self, Key)
-        	local Item = Properties[Key] or Table[Key]
+        	local Item = Properties[Key] or Children[Key]
         	
         	if typeof(Item) == "Instance" then
         		return Create(Item)
